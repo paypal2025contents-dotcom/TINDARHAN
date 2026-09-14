@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TinDARhan POS &mdash; Gawang ARBO, Produktong Batangue&ntilde;o</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen" class="login-overlay">
+  <div class="login-box">
+    <div class="brand-badge login-badge">TD</div>
+    <h2>TinDARhan POS</h2>
+    <p class="login-sub">Gawang ARBO, Produktong Batangue&ntilde;o</p>
+    <form id="loginForm">
+      <label>Username
+        <input type="text" id="loginUsername" autocomplete="username" required autofocus>
+      </label>
+      <label>Password
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </label>
+      <p id="loginError" class="login-error hidden"></p>
+      <button type="submit" class="btn btn-primary login-submit">Log In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ROOT (hidden until logged in) ============ -->
+<div id="appRoot" class="hidden">
+
+<!-- ============ APP HEADER ============ -->
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-badge">TD</div>
+    <div class="brand-text">
+      <h1>TinDARhan <span>POS</span></h1>
+      <p>Gawang ARBO, Produktong Batangue&ntilde;o &mdash; DAR Batangas</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="cashier-box">
+      <label for="cashierName">Cashier</label>
+      <input type="text" id="cashierName" placeholder="Enter name">
+    </div>
+    <div class="clock" id="liveClock">--:--:--</div>
+    <div class="account-box">
+      <span id="loggedInUser" class="logged-in-user"></span>
+      <button id="logoutBtn" class="btn btn-ghost btn-small">Log Out</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ NAV TABS ============ -->
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="pos">🛒 Point of Sale</button>
+  <button class="tab-btn" data-tab="inventory">📦 Inventory</button>
+  <button class="tab-btn" data-tab="reports">📊 Reports</button>
+</nav>
+
+<main class="app-main">
+
+  <!-- ============ POS TAB ============ -->
+  <section id="tab-pos" class="tab-panel active">
+    <div class="pos-layout">
+
+      <div class="pos-items-panel">
+        <div class="panel-toolbar">
+          <input type="search" id="posSearch" placeholder="🔍 Search product or SKU...">
+          <select id="posCategoryFilter">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+        <div id="posItemGrid" class="item-grid"></div>
+      </div>
+
+      <div class="pos-cart-panel" id="posCartPanel">
+        <h2>Current Sale</h2>
+        <div id="cartList" class="cart-list">
+          <p class="empty-hint">Tap a product to add it to the sale.</p>
+        </div>
+
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Items</span>
+            <span id="cartItemCount">0</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total Sale</span>
+            <span id="cartTotal">₱0.00</span>
+          </div>
+
+          <div class="pay-row">
+            <label for="amountPaid">Amount Paid</label>
+            <input type="number" id="amountPaid" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="summary-row change-row">
+            <span>Change</span>
+            <span id="cartChange">₱0.00</span>
+          </div>
+
+          <div class="cart-actions">
+            <button id="clearCartBtn" class="btn btn-ghost">Clear</button>
+            <button id="checkoutBtn" class="btn btn-primary">Complete Sale</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sticky mobile summary — always visible, no scrolling needed to see the sale total -->
+    <div id="floatingCartBar" class="floating-cart-bar hidden">
+      <span class="fc-count"><span id="floatingCartCount">0</span> items</span>
+      <span class="fc-total" id="floatingCartTotal">₱0.00</span>
+      <button class="fc-view-btn" onclick="document.getElementById('posCartPanel').scrollIntoView({behavior:'smooth', block:'start'})">View Cart ↓</button>
+    </div>
+  </section>
+
+  <!-- ============ INVENTORY TAB ============ -->
+  <section id="tab-inventory" class="tab-panel">
+    <div class="panel-toolbar">
+      <input type="search" id="invSearch" placeholder="🔍 Search inventory...">
+      <button id="addItemBtn" class="btn btn-primary">+ Add Item</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table" id="inventoryTable">
+        <thead>
+          <tr>
+            <th>Icon</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>SKU</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ REPORTS TAB ============ -->
+  <section id="tab-reports" class="tab-panel">
+    <div class="panel-toolbar reports-toolbar">
+      <div class="date-filter">
+        <label>From <input type="date" id="reportFrom"></label>
+        <label>To <input type="date" id="reportTo"></label>
+        <button id="applyReportFilter" class="btn btn-secondary">Filter</button>
+        <button id="resetReportFilter" class="btn btn-ghost">Reset</button>
+      </div>
+      <div class="report-export">
+        <button id="exportCsvBtn" class="btn btn-secondary">⬇ Export CSV</button>
+        <button id="printReportBtn" class="btn btn-secondary">🖨 Print Report</button>
+      </div>
+    </div>
+
+    <div class="stat-cards" id="reportStatCards">
+      <div class="stat-card">
+        <span class="stat-label">Total Sales</span>
+        <span class="stat-value" id="statTotalSales">₱0.00</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Transactions</span>
+        <span class="stat-value" id="statTransactions">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Items Sold</span>
+        <span class="stat-value" id="statItemsSold">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Average Sale</span>
+        <span class="stat-value" id="statAvgSale">₱0.00</span>
+      </div>
+    </div>
+
+    <div class="reports-grid">
+      <div class="report-block">
+        <h3>Top Selling Products</h3>
+        <div id="topProductsChart" class="bar-chart"></div>
+      </div>
+      <div class="report-block">
+        <h3>Sales Transactions</h3>
+        <div class="table-wrap short">
+          <table class="data-table" id="salesTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date/Time</th>
+                <th>Cashier</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="salesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</div> <!-- /#appRoot -->
+
+<!-- ============ QUICK ADD POPUP (shown when a product is tapped) ============ -->
+<div id="quickAddModal" class="modal-overlay hidden">
+  <div class="modal quick-add-modal">
+    <div class="qa-header">
+      <span class="qa-icon" id="qaIcon">🛍️</span>
+      <div class="qa-header-text">
+        <h3 id="qaName">Product</h3>
+        <p id="qaPrice">₱0.00 each</p>
+      </div>
+    </div>
+    <div class="qa-qty-row">
+      <button id="qaMinus" class="qty-control-btn" aria-label="Decrease">−</button>
+      <span id="qaQty">1</span>
+      <button id="qaPlus" class="qty-control-btn" aria-label="Increase">+</button>
+    </div>
+    <p id="qaStockNote" class="qa-stock-note"></p>
+    <div class="modal-actions">
+      <button type="button" id="qaCancel" class="btn btn-ghost">Cancel</button>
+      <button type="button" id="qaAddBtn" class="btn btn-primary">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADD / EDIT ITEM MODAL ============ -->
+<div id="itemModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2 id="itemModalTitle">Add Item</h2>
+    <form id="itemForm">
+      <input type="hidden" id="itemId">
+      <div class="form-grid">
+        <label>Product Name
+          <input type="text" id="itemName" required>
+        </label>
+        <label>Category
+          <input type="text" id="itemCategory" list="categoryList" required placeholder="e.g. Chips & Snacks">
+          <datalist id="categoryList"></datalist>
+        </label>
+        <label>SKU / Code
+          <input type="text" id="itemSku" placeholder="Auto-generated if blank">
+        </label>
+        <label>Icon (emoji)
+          <input type="text" id="itemIcon" placeholder="🥭" maxlength="4">
+        </label>
+        <label>Price (₱)
+          <input type="number" id="itemPrice" min="0" step="0.01" required>
+        </label>
+        <label>Stock Quantity
+          <input type="number" id="itemStock" min="0" step="1" required>
+        </label>
+        <label>Low Stock Alert Below
+          <input type="number" id="itemLowStock" min="0" step="1" value="5">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="deleteItemBtn" class="btn btn-danger hidden">Delete</button>
+        <div class="modal-actions-right">
+          <button type="button" id="cancelItemBtn" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Item</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ RECEIPT MODAL ============ -->
+<div id="receiptModal" class="modal-overlay hidden">
+  <div class="modal receipt-modal">
+    <div id="receiptContent" class="receipt">
+      <!-- populated by JS -->
+    </div>
+    <div class="modal-actions receipt-actions">
+      <button id="closeReceiptBtn" class="btn btn-ghost">Close</button>
+      <button id="printReceiptBtn" class="btn btn-primary">🖨 Print Receipt</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/pos.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/receipt.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
